@@ -175,7 +175,7 @@
                 📌 <strong>הוראות:</strong><br>
                 1. לחץ "טען משימות" כדי לראות משימות פתוחות<br>
                 2. לחץ על משימות כדי לבחור אותן<br>
-                3. לחץ "שמור משימות" להוספה לכרטיס
+                3. לחץ "שמור משימות" לעדכון הכרטיס
             </div>
             
             <button class="btn-load" onclick="loadWorkItems()">
@@ -195,7 +195,6 @@
 
     <script>
         const CLOUDFLARE_WORKER_URL = 'https://azure-proxy.uri-b.workers.dev';
-        const AZURE_ORG = 'guideline-finbot';
         
         let selectedItems = [];
         let allItems = [];
@@ -213,8 +212,6 @@
             showMessage('info', '🔄 מתחבר ל-Azure DevOps...');
             
             try {
-                console.log('🔵 Fetching from Cloudflare Worker...');
-                
                 const response = await fetch(CLOUDFLARE_WORKER_URL);
                 
                 if (!response.ok) {
@@ -223,15 +220,11 @@
                 
                 const data = await response.json();
                 
-                console.log('✅ Got response:', data);
-                
                 if (!data.success) {
                     throw new Error(data.error || 'Unknown error');
                 }
                 
                 allItems = data.items || [];
-                
-                console.log('✅ Got', allItems.length, 'items');
                 
                 if (allItems.length === 0) {
                     container.innerHTML = '<div class="loading">😔 לא נמצאו משימות פתוחות</div>';
@@ -312,7 +305,7 @@
             saveBtn.disabled = selectedItems.length === 0;
         }
         
-        function saveToZoho() {
+        async function saveToZoho() {
             if (selectedItems.length === 0) {
                 showMessage('error', '❌ לא נבחרו משימות');
                 return;
@@ -323,32 +316,40 @@
                 return;
             }
             
-            showMessage('info', '💾 שומר משימות...');
+            const saveBtn = document.querySelector('.btn-save');
+            saveBtn.disabled = true;
+            saveBtn.textContent = '⏳ שומר...';
+            showMessage('info', '💾 שומר משימות ל-Zoho Desk...');
             
-            let commentText = '[AZURE_WORK_ITEMS_UPDATE]\n\n';
-            selectedItems.forEach(function(item) {
-                const url = 'https://dev.azure.com/' + AZURE_ORG + '/_workitems/edit/' + item.id;
-                commentText += item.id + '|' + item.type + '|' + item.title + '|' + url + '\n';
-            });
-            
-            console.log('💬 Comment to add:', commentText);
-            console.log('🎫 Ticket ID:', ticketId);
-            
-            if (window.opener) {
-                window.opener.postMessage({
-                    action: 'addComment',
-                    ticketId: ticketId,
-                    comment: commentText,
-                    itemCount: selectedItems.length
-                }, '*');
+            try {
+                const response = await fetch(CLOUDFLARE_WORKER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticketId: ticketId,
+                        selectedItems: selectedItems
+                    })
+                });
                 
-                showMessage('success', '✅ נשמרו ' + selectedItems.length + ' משימות! החלון ייסגר בעוד 2 שניות...');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to save');
+                }
+                
+                showMessage('success', '✅ נשמרו ' + selectedItems.length + ' משימות בהצלחה! החלון ייסגר בעוד 2 שניות...');
                 
                 setTimeout(function() {
                     window.close();
                 }, 2000);
-            } else {
-                showMessage('info', '📋 העתק את הנתונים הבאים והוסף כהערה לכרטיס ' + ticketId + ':<br><br><textarea style="width:100%;height:150px;font-family:monospace;font-size:11px;">' + commentText + '</textarea>');
+                
+            } catch (error) {
+                console.error('❌ Save error:', error);
+                showMessage('error', '❌ שגיאה בשמירה: ' + error.message);
+                saveBtn.disabled = false;
+                saveBtn.textContent = '💾 שמור משימות לכרטיס';
             }
         }
         
