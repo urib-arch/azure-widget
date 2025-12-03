@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<!-- saved from url=(0051)file:///C:/Users/uri.b/Downloads/azure-popup_1.html -->
+<html dir="rtl" lang="he"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בחירת משימות Azure</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        .header h1 { font-size: 24px; margin-bottom: 8px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .content { padding: 24px; }
+        .info-box {
+            background: #e3f2fd;
+            border-right: 4px solid #2196f3;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: #1565c0;
+        }
+        .btn-load {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 24px;
+            transition: transform 0.2s;
+        }
+        .btn-load:hover { transform: translateY(-2px); }
+        .btn-load:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .work-items {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 24px;
+        }
+        .work-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .work-item:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2); }
+        .work-item.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .work-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .work-item-id {
+            font-weight: 700;
+            color: #0078d4;
+            font-size: 16px;
+        }
+        .work-item-type {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .type-bug { background: #ffebee; color: #c62828; }
+        .work-item-title {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .work-item-state {
+            font-size: 12px;
+            color: #666;
+        }
+        .selected-count {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .btn-save {
+            background: #28a745;
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .btn-save:hover { background: #218838; transform: translateY(-2px); }
+        .btn-save:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .message {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .message.error { background: #ffebee; color: #c62828; border-right: 4px solid #c62828; }
+        .message.success { background: #e8f5e9; color: #2e7d32; border-right: 4px solid #2e7d32; }
+        .message.info { background: #e3f2fd; color: #1565c0; border-right: 4px solid #1565c0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 בחירת משימות Azure DevOps</h1>
+            <p>בחר משימות לקישור לכרטיס התמיכה</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                📌 <strong>הוראות:</strong><br>
+                1. לחץ "טען משימות" כדי לראות משימות פתוחות<br>
+                2. לחץ על משימות כדי לבחור אותן<br>
+                3. לחץ "שמור משימות" להוספה לכרטיס
+            </div>
+            
+            <button class="btn-load" onclick="loadWorkItems()">
+                🔍 טען משימות מAzure DevOps
+            </button>
+            
+            <div id="message"></div>
+            <div id="items-container"></div>
+            <div id="save-section" style="display: none;">
+                <div class="selected-count" id="count">0 משימות נבחרו</div>
+                <button class="btn-save" onclick="saveToZoho()">
+                    💾 שמור משימות לכרטיס
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const AZURE_ORG = 'guideline-finbot';
+        const AZURE_PROJECT = 'Zoho Integration Test';
+        const AZURE_PAT = 'dXJpLmJAaGFzaGF2aW0uY28uaWw6ZmlqZTNobHZjaGFndWN1M3hiZWxwM2RidGFiZmdoZGlydGJkcXBxY2c0YmxtZnVjYXJ3YQ==';
+        
+        let selectedItems = [];
+        let allItems = [];
+        
+        // Get ticket ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketId = urlParams.get('ticketId');
+        
+        async function loadWorkItems() {
+            const container = document.getElementById('items-container');
+            const btn = document.querySelector('.btn-load');
+            
+            btn.disabled = true;
+            btn.textContent = '⏳ טוען...';
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>טוען משימות מAzure DevOps...</div>';
+            showMessage('info', '🔄 מתחבר ל-Azure DevOps...');
+            
+            try {
+                // Step 1: Get work item IDs
+                const wiqlUrl = `https://dev.azure.com/${AZURE_ORG}/${encodeURIComponent(AZURE_PROJECT)}/_apis/wit/wiql?api-version=7.1`;
+                const wiqlQuery = {
+                    query: `SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State] 
+                            FROM WorkItems 
+                            WHERE [System.TeamProject] = '${AZURE_PROJECT}' 
+                            AND ([System.State] = 'New' OR [System.State] = 'Active' OR [System.State] = 'To Do')
+                            ORDER BY [System.CreatedDate] DESC`
+                };
+                
+                console.log('🔵 Fetching IDs...');
+                const idsResponse = await fetch(wiqlUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + AZURE_PAT,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(wiqlQuery)
+                });
+                
+                if (!idsResponse.ok) {
+                    throw new Error(`Failed to fetch IDs: ${idsResponse.status}`);
+                }
+                
+                const idsData = await idsResponse.json();
+                const workItemIds = idsData.workItems.map(wi => wi.id);
+                
+                console.log('✅ Got', workItemIds.length, 'work items');
+                
+                if (workItemIds.length === 0) {
+                    container.innerHTML = '<div class="loading">😔 לא נמצאו משימות פתוחות</div>';
+                    showMessage('info', 'לא נמצאו משימות פתוחות ב-Azure DevOps');
+                    btn.disabled = false;
+                    btn.textContent = '🔍 טען משימות מAzure DevOps';
+                    return;
+                }
+                
+                // Step 2: Get work item details
+                const batchUrl = `https://dev.azure.com/${AZURE_ORG}/${encodeURIComponent(AZURE_PROJECT)}/_apis/wit/workitemsbatch?api-version=7.1`;
+                
+                console.log('🔵 Fetching details...');
+                const detailsResponse = await fetch(batchUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + AZURE_PAT,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ids: workItemIds,
+                        fields: ['System.Id', 'System.Title', 'System.WorkItemType', 'System.State']
+                    })
+                });
+                
+                if (!detailsResponse.ok) {
+                    throw new Error(`Failed to fetch details: ${detailsResponse.status}`);
+                }
+                
+                const detailsData = await detailsResponse.json();
+                allItems = detailsData.value;
+                
+                console.log('✅ Got details for', allItems.length, 'items');
+                
+                displayItems(allItems);
+                showMessage('success', `✅ נטענו ${allItems.length} משימות פתוחות`);
+                
+                btn.disabled = false;
+                btn.textContent = '🔄 רענן משימות';
+                document.getElementById('save-section').style.display = 'block';
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                container.innerHTML = '';
+                showMessage('error', `❌ שגיאה בטעינת משימות: ${error.message}`);
+                btn.disabled = false;
+                btn.textContent = '🔍 טען משימות מAzure DevOps';
+            }
+        }
+        
+        function displayItems(items) {
+            const container = document.getElementById('items-container');
+            
+            let html = '<div class="work-items">';
+            items.forEach(function(item) {
+                const id = item.id;
+                const title = item.fields['System.Title'];
+                const type = item.fields['System.WorkItemType'];
+                const state = item.fields['System.State'];
+                const typeClass = type.toLowerCase() === 'bug' ? 'type-bug' : '';
+                
+                html += `
+                    <div class="work-item" data-id="${id}" onclick="toggleItem(${id})">
+                        <div class="work-item-header">
+                            <span class="work-item-id">#${id}</span>
+                            <span class="work-item-type ${typeClass}">${escapeHtml(type)}</span>
+                        </div>
+                        <div class="work-item-title">${escapeHtml(title)}</div>
+                        <div class="work-item-state">📌 ${escapeHtml(state)}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleItem(id) {
+            const item = allItems.find(i => i.id === id);
+            if (!item) return;
+            
+            const index = selectedItems.findIndex(i => i.id === id);
+            const element = document.querySelector(`.work-item[data-id="${id}"]`);
+            
+            if (index > -1) {
+                selectedItems.splice(index, 1);
+                element.classList.remove('selected');
+            } else {
+                selectedItems.push({
+                    id: item.id,
+                    type: item.fields['System.WorkItemType'],
+                    title: item.fields['System.Title']
+                });
+                element.classList.add('selected');
+            }
+            
+            updateCount();
+        }
+        
+        function updateCount() {
+            const countEl = document.getElementById('count');
+            const saveBtn = document.querySelector('.btn-save');
+            
+            countEl.textContent = `${selectedItems.length} משימות נבחרו`;
+            saveBtn.disabled = selectedItems.length === 0;
+        }
+        
+        function saveToZoho() {
+            if (selectedItems.length === 0) {
+                showMessage('error', '❌ לא נבחרו משימות');
+                return;
+            }
+            
+            if (!ticketId) {
+                showMessage('error', '❌ חסר מזהה כרטיס (Ticket ID)');
+                return;
+            }
+            
+            showMessage('info', '💾 שומר משימות...');
+            
+            // Create comment data
+            let commentText = '[AZURE_WORK_ITEMS_UPDATE]\n\n';
+            selectedItems.forEach(function(item) {
+                const url = `https://dev.azure.com/${AZURE_ORG}/_workitems/edit/${item.id}`;
+                commentText += `${item.id}|${item.type}|${item.title}|${url}\n`;
+            });
+            
+            console.log('💬 Comment to add:', commentText);
+            console.log('🎫 Ticket ID:', ticketId);
+            
+            // Send message to parent window (Zoho Desk)
+            if (window.opener) {
+                window.opener.postMessage({
+                    action: 'addComment',
+                    ticketId: ticketId,
+                    comment: commentText,
+                    itemCount: selectedItems.length
+                }, '*');
+                
+                showMessage('success', `✅ נשמרו ${selectedItems.length} משימות! החלון ייסגר בעוד 2 שניות...`);
+                
+                setTimeout(function() {
+                    window.close();
+                }, 2000);
+            } else {
+                // Fallback - show data for manual copy
+                showMessage('info', `📋 העתק את הנתונים הבאים והוסף כהערה לכרטיס ${ticketId}:<br><br><textarea style="width:100%;height:150px;font-family:monospace;font-size:11px;">${commentText}</textarea>`);
+            }
+        }
+        
+        function showMessage(type, text) {
+            const msgEl = document.getElementById('message');
+            msgEl.className = 'message ' + type;
+            msgEl.innerHTML = text;
+            msgEl.style.display = 'block';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Auto-load on page open if ticketId exists
+        if (ticketId) {
+            console.log('✅ Ticket ID found:', ticketId);
+            showMessage('info', `🎫 כרטיס: ${ticketId}`);
+        }
+    </script>
+
+
+</body></html>
